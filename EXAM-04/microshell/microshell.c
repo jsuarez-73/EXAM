@@ -197,6 +197,11 @@ void	ft_execute_pipe(t_shell *sh)
 			ft_arrange_pipe(sh);
 			ft_set_args_pipe(sh);
 			ft_close_all_fd(sh);
+			if (strcmp("cd", *sh->cmd.off) == 0)
+			{
+				ft_cd(sh);
+				exit(sh->status);
+			}
 			if (execve(*sh->cmd.off, sh->cmd.off, sh->envp))
 				ft_path_no_executable(*sh->cmd.off);
 		}
@@ -212,23 +217,26 @@ void	ft_execute_simple(t_shell *sh)
 	if (!sh)
 		return ;
 	sh->nchild++;
-	if(!fork())
+	if (strcmp("cd", *sh->cmd.off) == 0)
+		ft_cd(sh);
+	else 
 	{
-		sh->cmd.end -= 1;
-		*(sh->cmd.end + 1) = NULL;
-		if (execve(*sh->cmd.off, sh->cmd.off, sh->envp))
-			ft_path_no_executable(*sh->cmd.off);
+		if(!fork())
+		{
+			sh->cmd.end -= 1;
+			*(sh->cmd.end + 1) = NULL;
+			if (execve(*sh->cmd.off, sh->cmd.off, sh->envp))
+				ft_path_no_executable(*sh->cmd.off);
+		}
+		ft_wait_all_children(sh);
 	}
-	ft_wait_all_children(sh);
 }
 
 void	ft_execute_cmd(t_shell *sh)
 {
 	if (!sh)
 		return ;
-	if (strcmp("cd", *sh->cmd.off) == 0)
-		ft_cd(sh);
-	else if (strcmp(";", *sh->cmd.off) == 0)
+	if (strcmp(";", *sh->cmd.off) == 0)
 		return ;
 	else if (sh->cmd.e_type == PIPE)
 		ft_execute_pipe(sh);
